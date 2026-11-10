@@ -70,11 +70,13 @@
   <br><br>
   <img src="docs/screenshots/login-en.png" width="900" alt="Sign-in screen">
   <br><br>
-  <img src="docs/screenshots/level-en.png" width="900" alt="Level page with progress, token totals and the road to level 25">
+  <img src="docs/screenshots/level-en.png" width="900" alt="Level page with progress, rewards and the road to level 100">
   <br><br>
   <img src="docs/screenshots/chat-settings-en.png" width="900" alt="Chat settings: send key, message style, tool calls, tokens and notifications">
   <br><br>
   <img src="docs/screenshots/terminal-en.png" width="900" alt="Two chat tabs and the terminal in the right panel">
+  <br><br>
+  <img src="docs/screenshots/editor-en.png" width="900" alt="The built-in code editor in the right panel">
   <br><br>
   <img src="docs/screenshots/update-en.png" width="900" alt="Update window showing the new version and what's new">
   <br><br>
@@ -215,11 +217,13 @@ Layout: `src/main` (Electron: git, GitHub, Claude) · `src/renderer` (React UI) 
   <br><br>
   <img src="docs/screenshots/login-th.png" width="900" alt="หน้าเข้าสู่ระบบ">
   <br><br>
-  <img src="docs/screenshots/level-th.png" width="900" alt="หน้าเลเวล แสดงความคืบหน้า ยอด token และเส้นทางถึงเลเวล 25">
+  <img src="docs/screenshots/level-th.png" width="900" alt="หน้าเลเวล แสดงความคืบหน้า รางวัล และเส้นทางถึงเลเวล 100">
   <br><br>
   <img src="docs/screenshots/chat-settings-th.png" width="900" alt="ตั้งค่าแชท: ปุ่มส่ง รูปแบบข้อความ การแสดง tool token และการแจ้งเตือน">
   <br><br>
   <img src="docs/screenshots/terminal-th.png" width="900" alt="แชทสอง tab และ terminal ในแผงขวา">
+  <br><br>
+  <img src="docs/screenshots/editor-th.png" width="900" alt="ช่องแก้โค้ดในแผงขวา">
   <br><br>
   <img src="docs/screenshots/update-th.png" width="900" alt="หน้าต่างอัปเดต แสดงเวอร์ชันใหม่และสิ่งที่เปลี่ยน">
   <br><br>

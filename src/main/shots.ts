@@ -31,7 +31,9 @@ export async function runShots(win: BrowserWindow, actions: Actions, getState: (
     win.setContentSize(1440, 900)
     await sleep(1200)
 
-    await actions['settings:update']({ language: 'th', theme: 'midnight', permissionMode: 'acceptEdits' })
+    // Haiku keeps the Claude usage of a screenshot run small.
+    await actions['settings:update']({ language: 'th', theme: 'midnight', permissionMode: 'acceptEdits', model: 'haiku', pauseUnfocused: false })
+    // (The screenshot window stays in the background, so animations must not pause there.)
     await js('window.__takode.select(null)')
     // The login screen, in both languages, then carry on without an account.
     await actions['auth:logout']()
@@ -40,7 +42,11 @@ export async function runShots(win: BrowserWindow, actions: Actions, getState: (
     await actions['settings:update']({ language: 'en' })
     await shot('login-en')
     await actions['settings:update']({ language: 'th' })
-    await actions['auth:guest']()
+    // A demo account (nothing is sent anywhere), so levels and rewards show as they do for a signed-in user.
+    const state = getState()
+    state.auth = { mode: 'account', server: 'https://api.example.com', account: { id: 'demo', name: 'Demo', email: 'you@example.com' } }
+    state.stats.xp = 600_000_000
+    await actions['settings:update']({})
     await shot('welcome-th')
     await actions['settings:update']({ language: 'en' })
     await shot('welcome-en')
@@ -164,6 +170,10 @@ export async function runShots(win: BrowserWindow, actions: Actions, getState: (
       await shot(`terminal-${lang}`)
       const shown = (await actions['term:open'](spaces[lang].id, 80, 24)) as string
       console.log(`CHECK terminal (${lang}): ran git=${shown.includes('Initial commit')} in workspace=${shown.includes('index.html')}`)
+      // The built-in editor with a file Claude just changed.
+      await js(`window.dispatchEvent(new CustomEvent('takode:open-file', { detail: { wsId: ${JSON.stringify(spaces[lang].id)}, path: 'src/Header.tsx', line: 3 } }))`)
+      await sleep(1200)
+      await shot(`editor-${lang}`)
       await js(`document.querySelector('.side-tabs button').click()`)
 
       await actions['spotlight:on'](spaces[lang].id)
@@ -179,10 +189,10 @@ export async function runShots(win: BrowserWindow, actions: Actions, getState: (
         version: '0.2.0',
         name: 'Takode 0.2.0',
         publishedAt: '2026-11-10T04:00:00Z',
-        pageUrl: 'https://github.com/madara1150/multi-tasker/releases',
+        pageUrl: 'https://github.com/madara1150/takode/releases',
         notes: lang === 'th'
-          ? '## ฟีเจอร์ใหม่\n- **อัปเดตในคลิกเดียว** จากหน้าต่างนี้\n- ไอคอนสถานะ branch ในแถบซ้าย\n- แสดงโควตา Claude และเวลารีเซ็ต\n\n## แก้ไข\n- รายการ model แสดงเวอร์ชันจริง เช่น `Opus 5.5`'
-          : '## New features\n- **Update in one click** from this window\n- Branch status icons in the sidebar\n- Claude usage with reset times\n\n## Fixes\n- The model list shows real versions, like `Opus 5.5`',
+          ? '## ฟีเจอร์ใหม่\n- **แก้โค้ดเองในแอป** พร้อมเปิดใน VS Code\n- โหมด **ถามทุกครั้ง** ก่อน Claude แก้ไฟล์หรือรันคำสั่ง\n- แถบสถานะด้านล่าง: โควตา Claude และแรม\n\n## แก้ไข\n- เปลี่ยนชื่อ branch จากแชทได้'
+          : '## New features\n- **Edit code by hand** in the app, or open it in VS Code\n- **Ask every time** mode before Claude edits files or runs commands\n- Status bar with Claude limits and memory use\n\n## Fixes\n- Renaming a branch from the chat now works',
         asset: { name: 'Takode-macOS.dmg', url: 'https://example.invalid', size: 1 }
       })})`)
       await shot(`update-${lang}`)
@@ -196,7 +206,7 @@ export async function runShots(win: BrowserWindow, actions: Actions, getState: (
       await js(`window.__takode.setModal({ type: 'settings', tab: 'level' })`)
       await shot(`level-${lang}`)
       await js('window.__takode.setModal(null)')
-      await js('window.__takode.setLevelUp(5)')
+      await js('window.__takode.setLevelUp(20)')
       await shot(`levelup-${lang}`)
       await js('window.__takode.setLevelUp(null)')
       await js(`window.__takode.setModal({ type: 'settings', tab: 'models' })`)
