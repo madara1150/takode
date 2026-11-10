@@ -17,11 +17,11 @@
 
 <br>
 
-<a href="https://github.com/madara1150/multi-tasker/releases/latest/download/Takode-macOS.dmg"><img src="https://img.shields.io/badge/Download-macOS%20(.dmg)-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" height="44"></a>
+<a href="https://github.com/madara1150/takode/releases/latest/download/Takode-macOS.dmg"><img src="https://img.shields.io/badge/Download-macOS%20(.dmg)-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" height="44"></a>
 &nbsp;
-<a href="https://github.com/madara1150/multi-tasker/releases/latest/download/Takode-Windows-Setup.exe"><img src="https://img.shields.io/badge/Download-Windows%20Installer-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="44"></a>
+<a href="https://github.com/madara1150/takode/releases/latest/download/Takode-Windows-Setup.exe"><img src="https://img.shields.io/badge/Download-Windows%20Installer-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="44"></a>
 
-<sub>Windows portable / แบบไม่ต้องติดตั้ง: <a href="https://github.com/madara1150/multi-tasker/releases/latest/download/Takode-Windows-Portable.zip">Takode-Windows-Portable.zip</a> · All versions / ทุกเวอร์ชัน: <a href="https://github.com/madara1150/multi-tasker/releases">Releases</a></sub>
+<sub>Windows portable / แบบไม่ต้องติดตั้ง: <a href="https://github.com/madara1150/takode/releases/latest/download/Takode-Windows-Portable.zip">Takode-Windows-Portable.zip</a> · All versions / ทุกเวอร์ชัน: <a href="https://github.com/madara1150/takode/releases">Releases</a></sub>
 
 <br><br>
 

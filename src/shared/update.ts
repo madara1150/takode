@@ -1,6 +1,6 @@
 // Finding a newer Takode on GitHub Releases. No Electron imports, so it can be unit-tested.
 
-export const RELEASES_REPO = 'madara1150/multi-tasker'
+export const RELEASES_REPO = 'madara1150/takode'
 
 /** File each platform installs from; the build scripts give them these exact names. */
 export const ASSET_FOR: Record<string, string> = {

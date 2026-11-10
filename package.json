@@ -1,7 +1,7 @@
 {
   "name": "takode",
   "productName": "Takode",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Run a team of Claude Code agents in parallel, each in its own git worktree",
   "author": "Tanathip",
   "license": "MIT",
@@ -52,9 +52,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/madara1150/multi-tasker.git"
+    "url": "https://github.com/madara1150/takode.git"
   },
-  "homepage": "https://github.com/madara1150/multi-tasker",
+  "homepage": "https://github.com/madara1150/takode",
   "dependencies": {
     "node-pty": "^1.1.0"
   }
