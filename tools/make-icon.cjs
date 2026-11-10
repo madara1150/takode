@@ -6,14 +6,37 @@ const path = require('node:path')
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8f9dff"/><stop offset="1" stop-color="#5b4fe0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21113f"/><stop offset="1" stop-color="#06050d"/>
     </linearGradient>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="220" y1="200" x2="820" y2="860">
+      <stop offset="0" stop-color="#ff4fd8"/><stop offset=".5" stop-color="#8f6bff"/><stop offset="1" stop-color="#1fe6ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".42" r=".55">
+      <stop offset="0" stop-color="#8f6bff" stop-opacity=".38"/><stop offset="1" stop-color="#8f6bff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#g)"/>
-  <path d="M300 760c110 0 150-76 270-76s130 40 190 40" stroke="#fff" stroke-opacity=".45" stroke-width="44" stroke-linecap="round" fill="none"/>
-  <path d="M286 738 668 356" stroke="#fff" stroke-width="72" stroke-linecap="round"/>
-  <circle cx="716" cy="308" r="76" fill="#fff"/>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#bg)"/>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#glow)"/>
+  <rect x="78" y="78" width="868" height="868" rx="196" fill="none" stroke="url(#ink)" stroke-opacity=".35" stroke-width="6"/>
+  <!-- tentacles that end in commit nodes -->
+  <g fill="none" stroke="url(#ink)" stroke-width="58" stroke-linecap="round">
+    <path d="M356 520C356 650 236 640 236 742"/>
+    <path d="M460 540C460 690 396 700 396 800"/>
+    <path d="M564 540C564 690 628 700 628 800"/>
+    <path d="M668 520C668 650 788 640 788 742"/>
+  </g>
+  <g fill="#0b0916" stroke="url(#ink)" stroke-width="30">
+    <circle cx="236" cy="778" r="42"/><circle cx="396" cy="836" r="42"/>
+    <circle cx="628" cy="836" r="42"/><circle cx="788" cy="778" r="42"/>
+  </g>
+  <!-- head -->
+  <path d="M300 560V412a212 212 0 0 1 424 0v148a40 40 0 0 1-40 40H340a40 40 0 0 1-40-40z" fill="url(#ink)"/>
+  <!-- single eye with a slit pupil -->
+  <circle cx="512" cy="418" r="112" fill="#0b0916"/>
+  <circle cx="512" cy="418" r="84" fill="#f4f1ff"/>
+  <ellipse cx="512" cy="418" rx="24" ry="66" fill="#0b0916"/>
+  <circle cx="540" cy="384" r="16" fill="#fff"/>
 </svg>`
 
 app.whenReady().then(async () => {

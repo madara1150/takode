@@ -121,7 +121,7 @@ async function withFullIndex<T>(
   wsPath: string,
   fn: (env: NodeJS.ProcessEnv) => Promise<T>
 ): Promise<T> {
-  const index = path.join(os.tmpdir(), `baton-index-${randomUUID()}`)
+  const index = path.join(os.tmpdir(), `takode-index-${randomUUID()}`)
   const env = { GIT_INDEX_FILE: index }
   try {
     await git(wsPath, ['read-tree', 'HEAD'], env)
@@ -190,9 +190,9 @@ export async function snapshot(wsPath: string): Promise<string> {
     const tree = await out(git(wsPath, ['write-tree'], env))
     return out(
       git(wsPath, [
-        '-c', 'user.name=Baton',
-        '-c', 'user.email=baton@localhost',
-        'commit-tree', tree, '-p', 'HEAD', '-m', 'Baton spotlight snapshot'
+        '-c', 'user.name=Takode',
+        '-c', 'user.email=takode@localhost',
+        'commit-tree', tree, '-p', 'HEAD', '-m', 'Takode spotlight snapshot'
       ])
     )
   })
@@ -243,6 +243,155 @@ export async function spotlightOff(repoPath: string, originalRef: string): Promi
   await git(repoPath, ['checkout', originalRef])
 }
 
-export async function pushBranch(wsPath: string, branch: string): Promise<void> {
-  await git(wsPath, ['push', '-u', 'origin', branch])
+export async function listRemotes(repoPath: string): Promise<string[]> {
+  return (await git(repoPath, ['remote'])).split('\n').map((s) => s.trim()).filter(Boolean)
+}
+
+export async function pushBranch(
+  wsPath: string,
+  branch: string,
+  opts: { remote?: string; force?: boolean } = {}
+): Promise<void> {
+  const args = ['push', '-u']
+  if (opts.force) args.push('--force-with-lease')
+  args.push(opts.remote || 'origin', branch)
+  await git(wsPath, args)
+}
+
+export async function renameBranch(wsPath: string, from: string, to: string): Promise<void> {
+  await git(wsPath, ['branch', '-m', from, to])
+}
+
+/** The branch checked out in a folder, or "" when detached. */
+export async function currentBranch(wsPath: string): Promise<string> {
+  return out(git(wsPath, ['branch', '--show-current']))
+}
+
+/** Whether git accepts the text as a branch name. */
+export async function validBranchName(wsPath: string, name: string): Promise<boolean> {
+  try {
+    await git(wsPath, ['check-ref-format', '--branch', name])
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function hasUpstream(wsPath: string): Promise<boolean> {
+  try {
+    await git(wsPath, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'])
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Whether the remote-tracking branch exists locally, and how many commits have not been pushed to it. */
+export async function remoteStatus(wsPath: string, remote: string, branch: string): Promise<{ onRemote: boolean; ahead: number }> {
+  const ref = `refs/remotes/${remote}/${branch}`
+  try {
+    await git(wsPath, ['rev-parse', '--verify', '--quiet', ref])
+  } catch {
+    return { onRemote: false, ahead: 0 }
+  }
+  const ahead = Number((await git(wsPath, ['rev-list', '--count', `${ref}..HEAD`])).trim()) || 0
+  return { onRemote: true, ahead }
+}
+
+/**
+ * Extra git settings for shells and Claude runs started by Takode, passed through
+ * GIT_CONFIG_* so the user's own git config is left untouched.
+ * push.autoSetupRemote: a plain `git push` on a new branch sets its upstream by itself.
+ */
+export function gitDefaultsEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const extra: [string, string][] = [['push.autoSetupRemote', 'true']]
+  const start = Number(env.GIT_CONFIG_COUNT) || 0
+  const out: Record<string, string> = { GIT_CONFIG_COUNT: String(start + extra.length) }
+  extra.forEach(([key, value], i) => {
+    out[`GIT_CONFIG_KEY_${start + i}`] = key
+    out[`GIT_CONFIG_VALUE_${start + i}`] = value
+  })
+  return out
+}
+
+const quiet = { GIT_TERMINAL_PROMPT: '0' }
+
+/** Fetches from the remote without ever asking for a password. False when it could not. */
+export async function fetchRemote(wsPath: string, remote: string): Promise<boolean> {
+  try {
+    await run('git', ['fetch', '--quiet', '--prune', remote], { cwd: wsPath, env: quiet, timeout: 30_000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function refExists(wsPath: string, ref: string): Promise<boolean> {
+  try {
+    await git(wsPath, ['rev-parse', '--verify', '--quiet', ref])
+    return true
+  } catch {
+    return false
+  }
+}
+
+const countBetween = async (wsPath: string, range: string): Promise<number> =>
+  Number(await out(git(wsPath, ['rev-list', '--count', range]))) || 0
+
+/** The base branch as it is on the remote when there is one, else the local branch. */
+export async function baseRef(wsPath: string, remote: string, base: string): Promise<string> {
+  const remoteRef = `refs/remotes/${remote}/${base}`
+  return (await refExists(wsPath, remoteRef)) ? remoteRef : base
+}
+
+/** New commits waiting: on the base branch (e.g. main) and on this branch's own remote copy. */
+export async function behindStatus(
+  wsPath: string,
+  remote: string,
+  base: string,
+  branch: string
+): Promise<{ base: number; remote: number }> {
+  const ref = await baseRef(wsPath, remote, base)
+  const own = `refs/remotes/${remote}/${branch}`
+  return {
+    base: (await refExists(wsPath, ref)) ? await countBetween(wsPath, `HEAD..${ref}`) : 0,
+    remote: (await refExists(wsPath, own)) ? await countBetween(wsPath, `HEAD..${own}`) : 0
+  }
+}
+
+export class PullConflictError extends Error {
+  constructor(public files: string[]) {
+    super('PULL_CONFLICT')
+  }
+}
+
+/**
+ * Brings in what others pushed to this branch, then the latest base branch.
+ * Uncommitted work is stashed around the merge. On a conflict the merge is left
+ * in place so it can be resolved (by hand or by Claude).
+ */
+export async function pullUpdates(
+  wsPath: string,
+  remote: string,
+  base: string,
+  branch: string,
+  mode: 'merge' | 'rebase' = 'merge'
+): Promise<{ fromRemote: number; fromBase: number; fetched: boolean }> {
+  const fetched = await fetchRemote(wsPath, remote)
+  const behind = await behindStatus(wsPath, remote, base, branch)
+  const sources: [string, number][] = []
+  if (behind.remote > 0) sources.push([`refs/remotes/${remote}/${branch}`, behind.remote])
+  if (behind.base > 0) sources.push([await baseRef(wsPath, remote, base), behind.base])
+  for (const [ref] of sources) {
+    const args = mode === 'rebase' ? ['rebase', '--autostash', ref] : ['merge', '--no-edit', '--autostash', ref]
+    try {
+      await git(wsPath, args, quiet)
+    } catch (err) {
+      const files = (await out(git(wsPath, ['diff', '--name-only', '--diff-filter=U']))).split('\n').filter(Boolean)
+      if (files.length) throw new PullConflictError(files)
+      throw err
+    }
+  }
+  // The base count is measured after pulling this branch, which may already contain some of it.
+  return { fromRemote: behind.remote, fromBase: behind.base, fetched }
 }

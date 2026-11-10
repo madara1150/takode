@@ -1,5 +1,7 @@
-// GitHub access through the user's own `gh` CLI login. Baton never sees or stores a token.
+// GitHub access through the user's own `gh` CLI login. Takode never sees or stores a token.
 import { spawn, type ChildProcess } from 'node:child_process'
+import { pickPr, type PrSummary } from '../shared/branch'
+import { FEEDBACK_QUERY, parsePrFeedback, parsePrUrl, type PrFeedback } from '../shared/feedback'
 import type { DeviceCode, GithubRepo, GithubStatus } from '../shared/types'
 import { run } from './git'
 
@@ -76,15 +78,48 @@ export async function githubClone(nameWithOwner: string, dest: string): Promise<
   await run('gh', ['repo', 'clone', nameWithOwner, dest], { timeout: 15 * 60_000 })
 }
 
-export async function createPullRequest(
-  wsPath: string,
-  opts: { title: string; body: string; base: string; head: string }
-): Promise<string> {
-  const text = await run(
-    'gh',
-    ['pr', 'create', '--title', opts.title, '--body', opts.body, '--base', opts.base, '--head', opts.head],
-    { cwd: wsPath, timeout: 60_000 }
-  )
+export interface PullRequestOptions {
+  title: string
+  body: string
+  base: string
+  head: string
+  draft?: boolean
+  reviewers?: string[]
+  labels?: string[]
+}
+
+export function pullRequestArgs(opts: PullRequestOptions): string[] {
+  const args = ['pr', 'create', '--title', opts.title, '--body', opts.body, '--base', opts.base, '--head', opts.head]
+  if (opts.draft) args.push('--draft')
+  if (opts.reviewers?.length) args.push('--reviewer', opts.reviewers.join(','))
+  if (opts.labels?.length) args.push('--label', opts.labels.join(','))
+  return args
+}
+
+export async function createPullRequest(wsPath: string, opts: PullRequestOptions): Promise<string> {
+  const text = await run('gh', pullRequestArgs(opts), { cwd: wsPath, timeout: 60_000 })
   const url = /https:\/\/\S+/.exec(text)
   return url ? url[0] : text.trim()
+}
+
+/** Review comments on a pull request that still need attention. */
+export async function fetchPrFeedback(prUrl: string, opts: { self?: string; since?: number }): Promise<PrFeedback> {
+  const pr = parsePrUrl(prUrl)
+  if (!pr) throw new Error('Not a GitHub pull request URL')
+  const text = await run(
+    'gh',
+    ['api', 'graphql', '-f', `query=${FEEDBACK_QUERY}`, '-F', `owner=${pr.owner}`, '-F', `repo=${pr.repo}`, '-F', `number=${pr.number}`],
+    { timeout: 30_000 }
+  )
+  return parsePrFeedback(JSON.parse(text), opts)
+}
+
+/** The pull request for a branch, if GitHub has one (open, merged or closed). */
+export async function prForBranch(wsPath: string, branch: string): Promise<PrSummary | null> {
+  const text = await run(
+    'gh',
+    ['pr', 'list', '--head', branch, '--state', 'all', '--json', 'number,state,url,isDraft', '--limit', '10'],
+    { cwd: wsPath, timeout: 30_000 }
+  )
+  return pickPr(JSON.parse(text) as PrSummary[])
 }

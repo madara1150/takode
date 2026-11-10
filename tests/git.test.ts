@@ -12,7 +12,7 @@ let ws: string
 const sh = (cwd: string, ...args: string[]): string => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
 
 beforeEach(async () => {
-  tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'baton-test-')))
+  tmp = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'takode-test-')))
   repo = path.join(tmp, 'demo')
   ws = path.join(tmp, 'workspaces', 'allegro')
   execFileSync('git', ['init', '-q', '-b', 'main', repo])
@@ -21,14 +21,14 @@ beforeEach(async () => {
   writeFileSync(path.join(repo, 'a.txt'), 'one\n')
   sh(repo, 'add', '-A')
   sh(repo, 'commit', '-q', '-m', 'Initial commit')
-  await g.createWorktree(repo, ws, 'baton/allegro', 'main')
+  await g.createWorktree(repo, ws, 'takode/allegro', 'main')
 })
 afterEach(() => rmSync(tmp, { recursive: true, force: true }))
 
 describe('workspaces', () => {
   it('creates a worktree on its own branch', async () => {
-    expect(sh(ws, 'branch', '--show-current')).toBe('baton/allegro')
-    expect(await g.branchExists(repo, 'baton/allegro')).toBe(true)
+    expect(sh(ws, 'branch', '--show-current')).toBe('takode/allegro')
+    expect(await g.branchExists(repo, 'takode/allegro')).toBe(true)
     expect((await g.repoInfo(repo)).baseBranch).toBe('main')
   })
 
@@ -49,9 +49,9 @@ describe('workspaces', () => {
 
   it('removes the worktree and optionally the branch', async () => {
     writeFileSync(path.join(ws, 'junk.txt'), 'x')
-    await g.removeWorktree(repo, ws, 'baton/allegro', true)
+    await g.removeWorktree(repo, ws, 'takode/allegro', true)
     expect(existsSync(ws)).toBe(false)
-    expect(await g.branchExists(repo, 'baton/allegro')).toBe(false)
+    expect(await g.branchExists(repo, 'takode/allegro')).toBe(false)
   })
 })
 
@@ -104,5 +104,24 @@ describe('claude stream', () => {
     const r = parseStreamLine(JSON.stringify({ type: 'result', subtype: 'success', duration_ms: 1200, total_cost_usd: 0.01 }))
     expect(r.items.map((i) => i.role)).toEqual(['result'])
     expect(parseStreamLine('not json').items).toEqual([])
+  })
+})
+
+describe('push', () => {
+  it('pushes to the chosen remote, with force-with-lease when asked', async () => {
+    const bare = path.join(tmp, 'upstream.git')
+    execFileSync('git', ['init', '-q', '--bare', bare])
+    sh(repo, 'remote', 'add', 'upstream', bare)
+    expect(await g.listRemotes(repo)).toEqual(['upstream'])
+
+    writeFileSync(path.join(ws, 'a.txt'), 'pushed\n')
+    await g.commitAll(ws, 'First')
+    await g.pushBranch(ws, 'takode/allegro', { remote: 'upstream' })
+    expect(sh(bare, 'rev-parse', 'takode/allegro')).toBe(sh(ws, 'rev-parse', 'HEAD'))
+
+    sh(ws, 'commit', '-q', '--amend', '-m', 'Rewritten')
+    await expect(g.pushBranch(ws, 'takode/allegro', { remote: 'upstream' })).rejects.toThrow()
+    await g.pushBranch(ws, 'takode/allegro', { remote: 'upstream', force: true })
+    expect(sh(bare, 'rev-parse', 'takode/allegro')).toBe(sh(ws, 'rev-parse', 'HEAD'))
   })
 })

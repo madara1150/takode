@@ -1,5 +1,5 @@
-appId: com.madara1150.baton
-productName: Baton
+appId: com.madara1150.takode
+productName: Takode
 copyright: Copyright (c) 2026 Tanathip
 directories:
   output: dist
@@ -13,13 +13,13 @@ mac:
   target:
     - target: dmg
       arch: arm64
-  artifactName: Baton-macOS.${ext}
+  artifactName: Takode-macOS.${ext}
 win:
   icon: assets/icon-1024.png
-  artifactName: Baton-Windows-Portable.${ext}
+  artifactName: Takode-Windows-Portable.${ext}
   target:
     - nsis
     - zip
 nsis:
-  artifactName: Baton-Windows-Setup.${ext}
+  artifactName: Takode-Windows-Setup.${ext}
   oneClick: false

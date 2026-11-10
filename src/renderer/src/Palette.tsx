@@ -45,6 +45,14 @@ export function Palette({ onClose }: { onClose: () => void }): ReactElement {
     if (selected) {
       list.push(
         { id: 'spot', icon: 'spotlight', label: `${t('spotlight')}: ${selected.name}`, hint: t('command'), run: () => toggleSpotlight(selected) },
+        { id: 'newchat', icon: 'plus', label: `${t('newChat')}: ${selected.name}`, hint: t('command'), run: () => void run(() => call('tabs:add', selected.id)) },
+        { id: 'review', icon: 'eye', label: `${t('review')}: ${selected.name}`, hint: t('command'), run: () => void run(() => call('ws:agentAction', selected.id, 'review')) },
+        { id: 'fix', icon: 'tool', label: `${t('fixErrors')}: ${selected.name}`, hint: t('command'), run: () => void run(() => call('ws:agentAction', selected.id, 'fixErrors')) },
+        { id: 'resolve', icon: 'branch', label: `${t('resolveConflicts')}: ${selected.name}`, hint: t('command'), run: () => void run(() => call('ws:agentAction', selected.id, 'resolveConflicts')) },
+        ...(state.repos.find((r) => r.id === selected.repoId)?.actions.custom ?? [])
+          .filter((a) => a.name.trim() && a.command.trim())
+          .map((a) => ({ id: `act-${a.id}`, icon: 'play', label: a.name, hint: a.command, run: () => void run(() => call('ws:runAction', selected.id, a.id)) })),
+        { id: 'push', icon: 'upload', label: `${t('push')}: ${selected.name}`, hint: t('command'), run: () => setModal({ type: 'push', wsId: selected.id }) },
         { id: 'pr', icon: 'pr', label: `${t('createPr')}: ${selected.name}`, hint: t('command'), run: () => setModal({ type: 'createPr', wsId: selected.id }) },
         { id: 'finder', icon: 'folder', label: `${t('openIn')} ${t('finder')}`, hint: t('command'), run: () => void run(() => call('ws:open', selected.id, 'finder')) },
         { id: 'term', icon: 'folder', label: `${t('openIn')} ${t('terminal')}`, hint: t('command'), run: () => void run(() => call('ws:open', selected.id, 'terminal')) },
